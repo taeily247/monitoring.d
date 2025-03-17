@@ -1,0 +1,2 @@
+DATA2 %{DATA}
+SHELL_COMMAND %{SYSLOGBASE} IP=%{IP:local_ip} USER=%{DATA2:remote_user}, PID=%{POSINT:pid_number}, PWD=%{PATH:local_path}, CMD= %{WORD:cmd_num} %{YEAR}-%{MONTHNUM}-%{MONTHDAY}_%{HOUR}:%{MINUTE}:%{SECOND} %{GREEDYDATA:command}

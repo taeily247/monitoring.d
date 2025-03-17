@@ -1,0 +1,265 @@
+input {
+    beats {
+        port => "5044"
+    }
+}
+
+###
+### FILTER Seetings
+filter {
+    if [fields][log_type] == "fail2ban" or [log_type] == "fail2ban" {
+        grok {
+            break_on_match => "true"
+            patterns_dir   => [ "/DATA/ELK/logstash/conf.d/grok_pattern" ]
+            match          => { "message" => "%{FAIL2BAN_ACTION}" }
+            remove_field   => [ "message" ]
+        }
+    }
+}
+
+filter {
+    if [fields][log_type] == "cmd" or [log_type] == "cmd" {
+        grok {
+            break_on_match => "true"
+            patterns_dir   => [ "/DATA/ELK/logstash/conf.d/grok_pattern" ]
+            match          => { "message" => "%{SHELL_COMMAND}" }
+            remove_field   => [ "message" ]
+        }
+    }
+}
+
+filter {
+    if [fields][log_type] == "cron" or [log_type] == "cron" {
+        grok {
+            break_on_match => "true"
+            patterns_dir   => [ "/DATA/ELK/logstash/conf.d/grok_pattern" ]
+            match          => { "message" => "%{CRON_LOG}" }
+            remove_field   => [ "message" ]
+        }
+        grok {
+            break_on_match => "true"
+            patterns_dir   => [ "/DATA/ELK/logstash/conf.d/grok_pattern" ]
+            match          => { "message" => "%{CRON_LOG}" }
+            remove_field   => [ "message" ]
+        }
+    }
+}
+
+filter {
+    if [fields][log_type] == "messages" or [log_type] == "messages" {
+        grok {
+            break_on_match => "true"
+            patterns_dir   => [ "/DATA/ELK/logstash/conf.d/grok_pattern" ]
+            match          => { "message" => "%{MESSAGE_LOG}" }
+            remove_field   => [ "message" ]
+        }
+    }
+}
+
+filter {
+    if [fields][log_type] == "sftp" or [log_type] == "sftp" {
+        grok {
+            break_on_match => "true"
+            patterns_dir   => [ "/DATA/ELK/logstash/conf.d/grok_pattern" ]
+            match          => { "message" => "%{SFTP_LOG}" }
+            remove_field   => [ "message" ]
+        }
+        grok {
+            break_on_match => "true"
+            patterns_dir   => [ "/DATA/ELK/logstash/conf.d/grok_pattern" ]
+            match          => { "message" => "%{SFTP_LOG}" }
+            remove_field   => [ "message" ]
+        }
+    }
+}
+
+filter {
+    if [fields][log_type] == "secure" or [log_type] == "secure" {
+        grok {
+            break_on_match => "true"
+            patterns_dir   => [ "/DATA/ELK/logstash/conf.d/grok_pattern" ]
+            match          => { "message" => "%{SSH_FAIL_USER}" }
+            add_tag        => [ "fail_user" ]
+            remove_field   => [ "message" ]
+        }
+        grok {
+            break_on_match => "true"
+            patterns_dir   => [ "/DATA/ELK/logstash/conf.d/grok_pattern" ]
+            match          => { "message" => "%{SSH_FAIL_PASS}" }
+            add_tag        => [ "fail_pass" ]
+            remove_field   => [ "message" ]
+        }
+        geoip {
+            source              => "remote_ip"
+            ecs_compatibility   => disabled
+        }
+    }
+}
+
+filter {
+    if [fields][log_type] == "secure_ip" or [log_type] == "secure_ip" {
+        grok {
+            break_on_match => "true"
+            patterns_dir   => [ "/DATA/ELK/logstash/conf.d/grok_pattern" ]
+            match          => { "message" => "%{IPV4_PREFIX:ip_prefix}" }
+            remove_field   => [ "message" ]
+        }
+    }
+}
+
+filter {
+    if [fields][log_type] == "vsftp" or [log_type] == "vsftp" {
+        grok {
+            break_on_match => "true"
+            patterns_dir   => [ "/DATA/ELK/logstash/conf.d/grok_pattern" ]
+            match          => { "message" => "%{VSFTPD_AUTH}" }
+            remove_field   => [ "message" ]
+        }
+        grok {
+            break_on_match => "true"
+            patterns_dir   => [ "/DATA/ELK/logstash/conf.d/grok_pattern" ]
+            match          => { "message" => "%{VSFTPD_UPLOAD}" }
+            remove_field   => [ "message" ]
+        }
+    }
+}
+
+filter {
+    if [fields][log_type] == "xmlrpc_ip" or [log_type] == "xmlrpc_ip" {
+        grok {
+            break_on_match => "true"
+            patterns_dir   => [ "/DATA/ELK/logstash/conf.d/grok_pattern" ]
+            match          => { "message" => "%{IP:ip_prefix_v1}" }
+            remove_field   => [ "message" ]
+        }
+    }
+}
+
+filter {
+    if [fields][log_type] == "access_log" or [log_type] == "access_log" {
+        grok {
+            break_on_match => "true"
+            patterns_dir   => [ "/DATA/ELK/logstash/conf.d/grok_pattern" ]
+            match          => { "message" => "%{COMBINEDAPACHELOG}" }
+            remove_field   => [ "message" ]
+        }
+        geoip {
+            source              => "remote_ip"
+            ecs_compatibility   => disabled
+        }
+    }
+}
+
+###
+### OUTPUT Seetings
+output {
+    if [fields][log_type] == "messages" or [log_type] == "messages" {
+        elasticsearch {
+            index       => "filebeat-messages-%{+YYMMdd}"
+            hosts       => "https://elk.enter-citech.toastmaker.net:9200"
+            ssl         => "true"
+            cacert      => "/DATA/ELK/logstash/config/certs/ca/ca.crt"
+            user        => "citsys"
+            password    => "nhn!@#123"
+        }
+    }
+
+        if [fields][log_type] == "cron" or [log_type] == "cron" {
+    elasticsearch {
+            index       => "filebeat-cron-%{+YYMMdd}"
+            hosts       => "https://elk.enter-citech.toastmaker.net:9200"
+            ssl         => "true"
+            cacert      => "/DATA/ELK/logstash/config/certs/ca/ca.crt"
+            user        => "citsys"
+            password    => "nhn!@#123"
+        }
+    }
+
+    if [fields][log_type] == "secure" or [log_type] == "secure" {
+        elasticsearch {
+            index       => "filebeat-secure-%{+YYMMdd}"
+            hosts       => "https://elk.enter-citech.toastmaker.net:9200"
+            ssl         => "true"
+            cacert      => "/DATA/ELK/logstash/config/certs/ca/ca.crt"
+            user        => "citsys"
+            password    => "nhn!@#123"
+        }
+    }
+
+    if [fields][log_type] == "secure_ip" or [log_type] == "secure_ip" {
+        elasticsearch {
+            index       => "filebeat-secure-ip-%{+YYMMdd}"
+            hosts       => "https://elk.enter-citech.toastmaker.net:9200"
+            ssl         => "true"
+            cacert      => "/DATA/ELK/logstash/config/certs/ca/ca.crt"
+            user        => "citsys"
+            password    => "nhn!@#123"
+        }
+    }
+
+    if [fields][log_type] == "sftp" or [log_type] == "sftp" {
+        elasticsearch {
+            index       => "filebeat-sftp-%{+YYMMdd}"
+            hosts       => "https://elk.enter-citech.toastmaker.net:9200"
+            ssl         => "true"
+            cacert      => "/DATA/ELK/logstash/config/certs/ca/ca.crt"
+            user        => "citsys"
+            password    => "nhn!@#123"
+        }
+    }
+
+    if [fields][log_type] == "vsftp" or [log_type] == "vsftp" {
+        elasticsearch {
+            index       => "filebeat-vsftp-%{+YYMMdd}"
+            hosts       => "https://elk.enter-citech.toastmaker.net:9200"
+            ssl         => "true"
+            cacert      => "/DATA/ELK/logstash/config/certs/ca/ca.crt"
+            user        => "citsys"
+            password    => "nhn!@#123"
+        }
+    }
+
+    if [fields][log_type] == "fail2ban" or [log_type] == "fail2ban" {
+        elasticsearch {
+            index       => "filebeat-fail2ban-%{+YYMMdd}"
+            hosts       => "https://elk.enter-citech.toastmaker.net:9200"
+            ssl         => "true"
+            cacert      => "/DATA/ELK/logstash/config/certs/ca/ca.crt"
+            user        => "citsys"
+            password    => "nhn!@#123"
+        }
+    }
+
+    if [fields][log_type] == "cmd" or [log_type] == "cmd" {
+        elasticsearch {
+            index       => "filebeat-cmd-%{+YYMMdd}"
+            hosts       => "https://elk.enter-citech.toastmaker.net:9200"
+            ssl         => "true"
+            cacert      => "/DATA/ELK/logstash/config/certs/ca/ca.crt"
+            user        => "citsys"
+            password    => "nhn!@#123"
+        }
+    }
+
+    if [fields][log_type] == "xmlrpc_ip" or [log_type] == "xmlrpc_ip" {
+        elasticsearch {
+            index       => "filebeat-xmlrpc-ip-%{+YYMMdd}"
+            hosts       => "https://elk.enter-citech.toastmaker.net:9200"
+            ssl         => "true"
+            cacert      => "/DATA/ELK/logstash/config/certs/ca/ca.crt"
+            user        => "citsys"
+            password    => "nhn!@#123"
+        }
+    }
+
+#if [fields][log_type] == "access_log" or [log_type] == "access_log" {
+#        elasticsearch {
+#            index       => "filebeat-access-log-%{+YYMMdd}"
+#            hosts       => "https://elk.enter-citech.toastmaker.net:9200"
+#            ssl         => "true"
+#            cacert      => "/DATA/ELK/logstash/config/certs/ca/ca.crt"
+#            user        => "citsys"
+#            password    => "nhn!@#123"
+#        }
+#    }
+}

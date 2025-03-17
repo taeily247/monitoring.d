@@ -1,0 +1,3 @@
+LOG_TIME %{YEAR}-%{MONTHNUM}-%{MONTHDAY}[T ]%{HOUR}:?%{MINUTE}(?::?%{SECOND})
+FAIL2BAN_FORM %{LOG_TIME:timestamp} %{JAVACLASS:criteria}.*? \[%{NUMBER:pid_number}\]:.*? %{LOGLEVEL:level}.*? \[%{NOTSPACE:fail2ban_name}\]
+FAIL2BAN_ACTION %{FAIL2BAN_FORM} %{WORD:fail2ban_action} %{IPV4:client_ip}

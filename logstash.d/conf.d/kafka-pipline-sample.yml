@@ -1,0 +1,65 @@
+## Filebeat -> Logstash
+input {
+  kafka {
+    bootstrap_servers => "${KAFKA_SERVER}:9092"
+    group_id          => "${KAFKA_CONSUMER_GROUP_ID}"
+    client_id         => "${KAFKA_CONSUMER_CLIENT_ID}"
+    topics            => ["${KAFKA_TOIPIC}}"]
+    decorate_events   => true
+    consumer_threads  => 1
+  }
+}
+
+filter {
+  json {
+    source => "message"
+    target => "parsed_json"
+  }
+  grok {
+      match => { "[parsed_json][message]" => "${GROK_PATTERN}" }
+  }
+}
+
+output {
+  elasticsearch {
+    index    => "${ES_INDEX_NAME}"
+    hosts    => "https://${ES_SERVER}:9200"
+    ssl      => "true"
+    cacert   => "${ES_KEY}"
+    user     => "${ES_USERNAME}"
+    password => "${ES_PASSWORD}"
+  }
+}
+
+## 적용예시
+input {
+  kafka {
+    bootstrap_servers => "monitor-kafka-v1:9092"
+    group_id => "linux-log"
+    client_id => "monitor-kafka-v1"
+    topics => ["linux-message", "linux-secure"]
+    decorate_events => true
+    consumer_threads => 1
+  }
+}
+
+filter {
+  json {
+    source => "message"
+    target => "parsed_json"
+  }
+  grok {
+    match => { "[parsed_json][message]" => "%{SYSLOGTIMESTAMP:timestamp} %{SYSLOGHOST:hostname} %{PROG:process_name}\[%{POSINT:process_pid:int}\]: %{GREEDYDATA:command_msg}" }
+  }
+}
+
+output {
+  elasticsearch {
+      index    => "kafka-linux-message"
+      hosts    => "https://monitor-es-p1:9200"
+      ssl      => "true"
+      cacert   => "/APP/logstash.d/config/certs/ca/ca.crt"
+      user     => "elasticsearch"
+      password => "elasticsearch!@#123"
+  }
+}

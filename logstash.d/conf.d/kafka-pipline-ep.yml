@@ -1,0 +1,171 @@
+input {
+  kafka {
+    bootstrap_servers => "citim-kafka-r2v1:9092,citim-kafka-r2v2:9092,citim-kafka-r2v3:9092"
+    group_id => "linux-hosting"
+    topics => ["linux-messages", "linux-cron", "linux-shell-cmd", "linux-secure", "linux-sftp-server", "linux-vsftpd", "linux-fail2ban"]
+    consumer_threads => 1
+    client_id => "citim-logstash-r2p1"
+    decorate_events => true
+  }
+}
+
+# filter linux-messages
+filter {
+  if [@metadata][kafka][topic] == "linux-messages" {
+    json {
+      source => "message"
+      target => "parsed_json"
+    }
+    mutate {
+      add_field => {
+        "debug_message" => "%{[parsed_json][message]}"
+      }
+    }
+    grok {
+      break_on_match => "true"
+      patterns_dir   => [ "/DATA/ELK/logstash/conf.d/grok_pattern" ]
+      match          => { "debug_message" => "%{MESSAGE_LOG}" }
+    }
+  }
+}
+
+# filter linux-cron
+filter {
+  if [@metadata][kafka][topic] == "linux-cron" {
+    json {
+      source => "message"
+      target => "parsed_json"
+    }
+    mutate {
+      add_field => {
+        "debug_message" => "%{[parsed_json][message]}"
+      }
+    }
+    grok {
+      break_on_match => "true"
+      patterns_dir   => [ "/DATA/ELK/logstash/conf.d/grok_pattern" ]
+      match          => { "debug_message" => "%{CRON_LOG}" }
+    }
+  }
+}
+
+# filter linux-shell-cmd
+filter {
+  if [@metadata][kafka][topic] == "linux-shell-cmd" {
+    json {
+      source => "message"
+      target => "parsed_json"
+    }
+    mutate {
+      add_field => {
+        "debug_message" => "%{[parsed_json][message]}"
+      }
+    }
+    grok {
+      break_on_match => "true"
+      patterns_dir   => [ "/DATA/ELK/logstash/conf.d/grok_pattern" ]
+      match          => { "debug_message" => "%{SHELL_COMMAND}" }
+    }
+  }
+}
+
+# filter linux-secure
+filter {
+  if [@metadata][kafka][topic] == "linux-secure" {
+    json {
+      source => "message"
+      target => "parsed_json"
+    }
+    mutate {
+      add_field => {
+        "debug_message" => "%{[parsed_json][message]}"
+      }
+    }
+    grok {
+      break_on_match => "true"
+      patterns_dir   => [ "/DATA/ELK/logstash/conf.d/grok_pattern" ]
+      match          => { "debug_message" => "%{SSH_FAIL_USER}" }
+      add_tag        => [ "fail_user" ]
+    }
+  }
+}
+
+# filter linux-sftp-server
+filter {
+  if [@metadata][kafka][topic] == "linux-sftp-server" {
+    json {
+      source => "message"
+      target => "parsed_json"
+    }
+    mutate {
+      add_field => {
+        "debug_message" => "%{[parsed_json][message]}"
+      }
+    }
+    grok {
+      break_on_match => "true"
+      patterns_dir   => [ "/DATA/ELK/logstash/conf.d/grok_pattern" ]
+      match          => { "debug_message" => "%{SFTP_LOG}" }
+    }
+  }
+}
+
+# filter linux-vsftpd
+filter {
+  if [@metadata][kafka][topic] == "linux-vsftpd" {
+    json {
+      source => "message"
+      target => "parsed_json"
+    }
+    mutate {
+      add_field => {
+        "debug_message" => "%{[parsed_json][message]}"
+      }
+    }
+    grok {
+      break_on_match => "true"
+      patterns_dir   => [ "/DATA/ELK/logstash/conf.d/grok_pattern" ]
+      match          => { "debug_message" => "%{VSFTPD_AUTH}" }
+    }
+    grok {
+      break_on_match => "true"
+      patterns_dir   => [ "/DATA/ELK/logstash/conf.d/grok_pattern" ]
+      match          => { "debug_message" => "%{VSFTPD_UPLOAD}" }
+    }
+  }
+}
+
+# filter linux-fail2ban
+filter {
+  if [@metadata][kafka][topic] == "linux-fail2ban" {
+    json {
+      source => "message"
+      target => "parsed_json"
+    }
+    mutate {
+      add_field => {
+        "debug_message" => "%{[parsed_json][message]}"
+      }
+    }
+    grok {
+      break_on_match => "true"
+      patterns_dir   => [ "/DATA/ELK/logstash/conf.d/grok_pattern" ]
+      match          => { "debug_message" => "%{FAIL2BAN_ACTION}" }
+    }
+  }
+}
+
+output {
+  file {
+    path => "/DATA/ELK/logstash/logs/logstash-output-debug.log"
+    codec => rubydebug
+  }
+  elasticsearch {
+    index       => "${kafka-[@metadata][kafka][topic]}"
+    hosts       => "https://elk.enter-citech.toastmaker.net:9200"
+    ssl         => "true"
+    cacert      => "/DATA/ELK/logstash/config/certs/ca/ca.crt"
+    user        => "citsys"
+    password    => "nhn!@#123"
+  }
+}

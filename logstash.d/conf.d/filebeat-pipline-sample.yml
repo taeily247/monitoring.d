@@ -1,0 +1,32 @@
+## Filebeat -> Kafka <- Logstash 가져오는 과정에서 message가 json으로 이중 중첩이 걸려 아래와 같이 처리를 진행
+input {
+  beats {
+    port => "5044"
+  }
+}
+
+## filebeat에서 보내는 add_tag fields에 log_type을 추가해서 수집되는 로그에 type에 따라 grok 및 index를 매핑한다.
+## 예시를 들기 위해 log_type => "cmd"로 사용해본다.
+filter {
+  if [fields][log_type] == "cmd" or [log_type] == "cmd" {
+    grok {
+      break_on_match => "true"
+      patterns_dir   => [ "${LOGSTASH_GROK_PATTERN_DIR}" ]
+      match          => { "message" => "%{SHELL_COMMAND}" }
+      remove_field   => [ "message" ]
+    }
+  }
+}
+
+output {
+  if [fields][log_type] == "cmd" or [log_type] == "cmd" {
+    elasticsearch {
+      index    => "${ES_INDEX_NAME}"
+      hosts    => "https://${ES_SERVER}:9200"
+      ssl      => "true"
+      cacert   => "${ES_KEY}"
+      user     => "${ES_USERNAME}"
+      password => "${ES_PASSWORD}"
+    }
+  }
+}
